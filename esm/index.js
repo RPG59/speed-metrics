@@ -38,7 +38,9 @@ export class SpeedMetrics {
         return sortedKeys[i];
       }
 
-      return sortedKeys[i] * (1 - w) + sortedKeys[i + 1] * w;
+      if (arrCounter === lower && w) {
+        return sortedKeys[i] * (1 - w) + sortedKeys[i + 1] * w;
+      }
     }
 
     return sortedKeys[0];
