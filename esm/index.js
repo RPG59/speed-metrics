@@ -1,5 +1,27 @@
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
+class Buffer {
+  constructor(size) {
+    this.size = size;
+    this.container = new Array(size).fill(null);
+    this.counter = 0;
+  }
+
+  push(value) {
+    if (this.counter < this.size) {
+      this.container[this.counter++] = value;
+      return;
+    }
+
+    this.container.shift();
+    this.container.push(value);
+  }
+
+}
+
+var ScaleFactor = 4;
+var FrameTimelineOffestY = 75;
+var FrameTimelineScaleY = 20;
 export class SpeedMetrics {
   constructor() {
     _defineProperty(this, "metrics", ["FPS", "FPS Avg", "FPS 1% Low", "Memory Mb"]);
@@ -14,14 +36,21 @@ export class SpeedMetrics {
     this.canvas.setAttribute("id", "speedMetricsCanvas");
     this.ctx = this.canvas.getContext("2d");
     this.canvas.style.width = "500px";
-    this.canvas.style.height = "300px";
+    this.canvas.style.height = "350px";
     this.canvas.width = 500;
-    this.canvas.height = 300;
-    this.ctx.scale(4, 4);
+    this.canvas.height = 350;
+    this.ctx.scale(ScaleFactor, ScaleFactor);
     this.ctx.fillStyle = "#1e8de8";
     this.metrics.forEach((metric, i) => {
       this.ctx.fillText(metric, 0, 18 * i + 9);
     });
+    this.frameTimeBuffer = new Buffer(~~(this.canvas.width / ScaleFactor));
+    var frameTimelineGradient = this.ctx.createLinearGradient(0, 75, 0, 100);
+    frameTimelineGradient.addColorStop(0, "red");
+    frameTimelineGradient.addColorStop(1, "yellow");
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeStyle = frameTimelineGradient;
+    this.prevFrameTimestamp = performance.now();
   }
 
   get1Low() {
@@ -60,10 +89,29 @@ export class SpeedMetrics {
     this.fpsMap[fps]++;
   }
 
+  updateFrameTimeline() {
+    this.ctx.clearRect(0, 70, 125, 17.5);
+
+    for (var i = 0; i < this.frameTimeBuffer.counter; ++i) {
+      if (i === 0) {
+        continue;
+      }
+
+      var frameTime = Math.min(this.frameTimeBuffer.container[i], 250);
+      this.ctx.beginPath();
+      this.ctx.moveTo(i - 1, this.frameTimeBuffer.container[i - 1] / FrameTimelineScaleY + FrameTimelineOffestY);
+      this.ctx.lineTo(i, frameTime / FrameTimelineScaleY + FrameTimelineOffestY);
+      this.ctx.stroke();
+    }
+  }
+
   update() {
     var t = performance.now();
     var d = t - this.timestamp;
+    this.frameTimeBuffer.push(t - this.prevFrameTimestamp);
+    this.prevFrameTimestamp = t;
     this.frameCounter++;
+    this.updateFrameTimeline();
 
     if (d < 1000) {
       return;
@@ -81,7 +129,7 @@ export class SpeedMetrics {
     this.timestamp = t;
     this.frameCounter = 0;
     this.ctx.fillStyle = "#fff";
-    this.ctx.clearRect(100, 0, 100, 100);
+    this.ctx.clearRect(100, 0, this.canvas.width / ScaleFactor, this.canvas.height / ScaleFactor);
     this.ctx.fillStyle = "orange";
     this.metrics.forEach((metric, i) => {
       this.ctx.fillText(metricMap[metric], 100, 18 * i + 9);
