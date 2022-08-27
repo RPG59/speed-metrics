@@ -14,6 +14,11 @@ class Buffer {
     this.container.shift();
     this.container.push(value);
   }
+
+  clean() {
+    this.container.fill(null);
+    this.counter = 0;
+  }
 }
 
 const ScaleFactor = 4;
@@ -21,6 +26,9 @@ const FrameTimelineOffestY = 75;
 const FrameTimelineScaleY = 20;
 
 export class SpeedMetrics {
+  static AVG_METRIC = 1;
+  static FRAME_TIMELINE_METRIC = 1 << 1;
+
   metrics = ["FPS", "FPS Avg", "FPS 1% Low", "Memory Mb"];
   fpsMap = {};
 
@@ -55,7 +63,7 @@ export class SpeedMetrics {
     this.prevFrameTimestamp = performance.now();
   }
 
-  get1Low() {
+  #get1Low() {
     const sortedKeys = Object.keys(this.fpsMap);
     const index = (this.avgCalculations - 1) * 0.01;
     const lower = Math.floor(index);
@@ -77,14 +85,14 @@ export class SpeedMetrics {
     return sortedKeys[0];
   }
 
-  calculateAvgFps(fps) {
+  #calculateAvgFps(fps) {
     this.avgCalculations++;
 
     this.avgFps =
       ((this.avgCalculations - 1) * this.avgFps + fps) / this.avgCalculations;
   }
 
-  updateFpsMap(fps) {
+  #updateFpsMap(fps) {
     if (!this.fpsMap[fps]) {
       this.fpsMap[fps] = 1;
 
@@ -94,7 +102,7 @@ export class SpeedMetrics {
     this.fpsMap[fps]++;
   }
 
-  updateFrameTimeline() {
+  #updateFrameTimeline() {
     this.ctx.clearRect(0, 70, 125, 17.5);
 
     for (let i = 0; i < this.frameTimeBuffer.counter; ++i) {
@@ -126,7 +134,7 @@ export class SpeedMetrics {
     this.prevFrameTimestamp = t;
     this.frameCounter++;
 
-    this.updateFrameTimeline();
+    this.#updateFrameTimeline();
 
     if (d < 1000) {
       return;
@@ -134,8 +142,8 @@ export class SpeedMetrics {
 
     const fps = ~~((this.frameCounter * 1000) / d);
 
-    this.updateFpsMap(fps);
-    this.calculateAvgFps(fps);
+    this.#updateFpsMap(fps);
+    this.#calculateAvgFps(fps);
 
     const metricMap = {
       FPS: fps,
@@ -143,7 +151,7 @@ export class SpeedMetrics {
       "Memory Mb":
         performance.memory &&
         (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2),
-      "FPS 1% Low": ~~this.get1Low(),
+      "FPS 1% Low": ~~this.#get1Low(),
     };
 
     this.timestamp = t;
@@ -161,5 +169,17 @@ export class SpeedMetrics {
     this.metrics.forEach((metric, i) => {
       this.ctx.fillText(metricMap[metric], 100, 18 * i + 9);
     });
+  }
+
+  refresh(mask) {
+    if (mask & SpeedMetrics.AVG_METRIC) {
+      this.avgFps = 0;
+      this.avgCalculations = 0;
+      this.fpsMap = {};
+    }
+
+    if (mask & SpeedMetrics.FRAME_TIMELINE_METRIC) {
+      this.frameTimeBuffer.clean();
+    }
   }
 }

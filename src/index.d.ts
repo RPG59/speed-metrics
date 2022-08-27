@@ -1,5 +1,9 @@
 export class SpeedMetrics {
-    canvas: HTMLCanvasElement;
+  static AVG_METRIC: number;
+  static FRAME_TIMELINE_METRIC: number;
 
-    update(): void
+  canvas: HTMLCanvasElement;
+
+  update(): void;
+  refresh(mask: number): void;
 }

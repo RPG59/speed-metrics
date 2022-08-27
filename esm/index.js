@@ -1,4 +1,10 @@
+function _classPrivateMethodInitSpec(obj, privateSet) { _checkPrivateRedeclaration(obj, privateSet); privateSet.add(obj); }
+
+function _checkPrivateRedeclaration(obj, privateCollection) { if (privateCollection.has(obj)) { throw new TypeError("Cannot initialize the same private elements twice on an object"); } }
+
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _classPrivateMethodGet(receiver, privateSet, fn) { if (!privateSet.has(receiver)) { throw new TypeError("attempted to get private field on non-instance"); } return fn; }
 
 class Buffer {
   constructor(size) {
@@ -17,13 +23,35 @@ class Buffer {
     this.container.push(value);
   }
 
+  clean() {
+    this.container.fill(null);
+    this.counter = 0;
+  }
+
 }
 
 var ScaleFactor = 4;
 var FrameTimelineOffestY = 75;
 var FrameTimelineScaleY = 20;
+
+var _get1Low = /*#__PURE__*/new WeakSet();
+
+var _calculateAvgFps = /*#__PURE__*/new WeakSet();
+
+var _updateFpsMap = /*#__PURE__*/new WeakSet();
+
+var _updateFrameTimeline = /*#__PURE__*/new WeakSet();
+
 export class SpeedMetrics {
   constructor() {
+    _classPrivateMethodInitSpec(this, _updateFrameTimeline);
+
+    _classPrivateMethodInitSpec(this, _updateFpsMap);
+
+    _classPrivateMethodInitSpec(this, _calculateAvgFps);
+
+    _classPrivateMethodInitSpec(this, _get1Low);
+
     _defineProperty(this, "metrics", ["FPS", "FPS Avg", "FPS 1% Low", "Memory Mb"]);
 
     _defineProperty(this, "fpsMap", {});
@@ -53,78 +81,30 @@ export class SpeedMetrics {
     this.prevFrameTimestamp = performance.now();
   }
 
-  get1Low() {
-    var sortedKeys = Object.keys(this.fpsMap);
-    var index = (this.avgCalculations - 1) * 0.01;
-    var lower = Math.floor(index);
-    var w = index % 1;
-    var arrCounter = 0;
-
-    for (var i = 0; i < sortedKeys.length - 1; ++i) {
-      arrCounter += this.fpsMap[sortedKeys[i]];
-
-      if (arrCounter === lower && !w || arrCounter > lower) {
-        return sortedKeys[i];
-      }
-
-      if (arrCounter === lower && w) {
-        return sortedKeys[i] * (1 - w) + sortedKeys[i + 1] * w;
-      }
-    }
-
-    return sortedKeys[0];
-  }
-
-  calculateAvgFps(fps) {
-    this.avgCalculations++;
-    this.avgFps = ((this.avgCalculations - 1) * this.avgFps + fps) / this.avgCalculations;
-  }
-
-  updateFpsMap(fps) {
-    if (!this.fpsMap[fps]) {
-      this.fpsMap[fps] = 1;
-      return;
-    }
-
-    this.fpsMap[fps]++;
-  }
-
-  updateFrameTimeline() {
-    this.ctx.clearRect(0, 70, 125, 17.5);
-
-    for (var i = 0; i < this.frameTimeBuffer.counter; ++i) {
-      if (i === 0) {
-        continue;
-      }
-
-      var frameTime = Math.min(this.frameTimeBuffer.container[i], 250);
-      this.ctx.beginPath();
-      this.ctx.moveTo(i - 1, this.frameTimeBuffer.container[i - 1] / FrameTimelineScaleY + FrameTimelineOffestY);
-      this.ctx.lineTo(i, frameTime / FrameTimelineScaleY + FrameTimelineOffestY);
-      this.ctx.stroke();
-    }
-  }
-
   update() {
     var t = performance.now();
     var d = t - this.timestamp;
     this.frameTimeBuffer.push(t - this.prevFrameTimestamp);
     this.prevFrameTimestamp = t;
     this.frameCounter++;
-    this.updateFrameTimeline();
+
+    _classPrivateMethodGet(this, _updateFrameTimeline, _updateFrameTimeline2).call(this);
 
     if (d < 1000) {
       return;
     }
 
     var fps = ~~(this.frameCounter * 1000 / d);
-    this.updateFpsMap(fps);
-    this.calculateAvgFps(fps);
+
+    _classPrivateMethodGet(this, _updateFpsMap, _updateFpsMap2).call(this, fps);
+
+    _classPrivateMethodGet(this, _calculateAvgFps, _calculateAvgFps2).call(this, fps);
+
     var metricMap = {
       FPS: fps,
       "FPS Avg": Math.round(this.avgFps),
       "Memory Mb": performance.memory && (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2),
-      "FPS 1% Low": ~~this.get1Low()
+      "FPS 1% Low": ~~_classPrivateMethodGet(this, _get1Low, _get1Low2).call(this)
     };
     this.timestamp = t;
     this.frameCounter = 0;
@@ -136,4 +116,72 @@ export class SpeedMetrics {
     });
   }
 
+  refresh(mask) {
+    if (mask & SpeedMetrics.AVG_METRIC) {
+      this.avgFps = 0;
+      this.avgCalculations = 0;
+      this.fpsMap = {};
+    }
+
+    if (mask & SpeedMetrics.FRAME_TIMELINE_METRIC) {
+      this.frameTimeBuffer.clean();
+    }
+  }
+
 }
+
+function _get1Low2() {
+  var sortedKeys = Object.keys(this.fpsMap);
+  var index = (this.avgCalculations - 1) * 0.01;
+  var lower = Math.floor(index);
+  var w = index % 1;
+  var arrCounter = 0;
+
+  for (var i = 0; i < sortedKeys.length - 1; ++i) {
+    arrCounter += this.fpsMap[sortedKeys[i]];
+
+    if (arrCounter === lower && !w || arrCounter > lower) {
+      return sortedKeys[i];
+    }
+
+    if (arrCounter === lower && w) {
+      return sortedKeys[i] * (1 - w) + sortedKeys[i + 1] * w;
+    }
+  }
+
+  return sortedKeys[0];
+}
+
+function _calculateAvgFps2(fps) {
+  this.avgCalculations++;
+  this.avgFps = ((this.avgCalculations - 1) * this.avgFps + fps) / this.avgCalculations;
+}
+
+function _updateFpsMap2(fps) {
+  if (!this.fpsMap[fps]) {
+    this.fpsMap[fps] = 1;
+    return;
+  }
+
+  this.fpsMap[fps]++;
+}
+
+function _updateFrameTimeline2() {
+  this.ctx.clearRect(0, 70, 125, 17.5);
+
+  for (var i = 0; i < this.frameTimeBuffer.counter; ++i) {
+    if (i === 0) {
+      continue;
+    }
+
+    var frameTime = Math.min(this.frameTimeBuffer.container[i], 250);
+    this.ctx.beginPath();
+    this.ctx.moveTo(i - 1, this.frameTimeBuffer.container[i - 1] / FrameTimelineScaleY + FrameTimelineOffestY);
+    this.ctx.lineTo(i, frameTime / FrameTimelineScaleY + FrameTimelineOffestY);
+    this.ctx.stroke();
+  }
+}
+
+_defineProperty(SpeedMetrics, "AVG_METRIC", 1);
+
+_defineProperty(SpeedMetrics, "FRAME_TIMELINE_METRIC", 1 << 1);
