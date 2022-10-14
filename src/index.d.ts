@@ -1,9 +1,13 @@
-export class SpeedMetrics {
-  static AVG_METRIC: number;
-  static FRAME_TIMELINE_METRIC: number;
+type RefreshConfigType = {
+  avgFps: boolean;
+  frameTimeline: boolean;
+};
 
+export class SpeedMetrics {
   canvas: HTMLCanvasElement;
 
+  constructor(config: { frameTimeline: boolean } = { frameTimeline: true }) {}
+
   update(): void;
-  refresh(mask: number): void;
+  refresh(config: RefreshConfigType): void;
 }

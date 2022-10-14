@@ -26,13 +26,11 @@ const FrameTimelineOffestY = 75;
 const FrameTimelineScaleY = 20;
 
 export class SpeedMetrics {
-  static AVG_METRIC = 1;
-  static FRAME_TIMELINE_METRIC = 1 << 1;
-
   metrics = ["FPS", "FPS Avg", "FPS 1% Low", "Memory Mb"];
   fpsMap = {};
 
-  constructor() {
+  constructor(config = { frameTimeline: true }) {
+    this.config = config;
     this.timestamp = performance.now();
     this.frameCounter = 0;
     this.avgCalculations = 0;
@@ -134,7 +132,9 @@ export class SpeedMetrics {
     this.prevFrameTimestamp = t;
     this.frameCounter++;
 
-    this.#updateFrameTimeline();
+    if (this.config.frameTimeline) {
+      this.#updateFrameTimeline();
+    }
 
     if (d < 1000) {
       return;
@@ -171,14 +171,14 @@ export class SpeedMetrics {
     });
   }
 
-  refresh(mask) {
-    if (mask & SpeedMetrics.AVG_METRIC) {
+  refresh(config) {
+    if (config?.avgFps) {
       this.avgFps = 0;
       this.avgCalculations = 0;
       this.fpsMap = {};
     }
 
-    if (mask & SpeedMetrics.FRAME_TIMELINE_METRIC) {
+    if (config?.frameTimeline) {
       this.frameTimeBuffer.clean();
     }
   }

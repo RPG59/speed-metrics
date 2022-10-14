@@ -44,6 +44,10 @@ var _updateFrameTimeline = /*#__PURE__*/new WeakSet();
 
 export class SpeedMetrics {
   constructor() {
+    var config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+      frameTimeline: true
+    };
+
     _classPrivateMethodInitSpec(this, _updateFrameTimeline);
 
     _classPrivateMethodInitSpec(this, _updateFpsMap);
@@ -56,6 +60,7 @@ export class SpeedMetrics {
 
     _defineProperty(this, "fpsMap", {});
 
+    this.config = config;
     this.timestamp = performance.now();
     this.frameCounter = 0;
     this.avgCalculations = 0;
@@ -88,7 +93,9 @@ export class SpeedMetrics {
     this.prevFrameTimestamp = t;
     this.frameCounter++;
 
-    _classPrivateMethodGet(this, _updateFrameTimeline, _updateFrameTimeline2).call(this);
+    if (this.config.frameTimeline) {
+      _classPrivateMethodGet(this, _updateFrameTimeline, _updateFrameTimeline2).call(this);
+    }
 
     if (d < 1000) {
       return;
@@ -116,14 +123,14 @@ export class SpeedMetrics {
     });
   }
 
-  refresh(mask) {
-    if (mask & SpeedMetrics.AVG_METRIC) {
+  refresh(config) {
+    if (config !== null && config !== void 0 && config.avgFps) {
       this.avgFps = 0;
       this.avgCalculations = 0;
       this.fpsMap = {};
     }
 
-    if (mask & SpeedMetrics.FRAME_TIMELINE_METRIC) {
+    if (config !== null && config !== void 0 && config.frameTimeline) {
       this.frameTimeBuffer.clean();
     }
   }
@@ -181,7 +188,3 @@ function _updateFrameTimeline2() {
     this.ctx.stroke();
   }
 }
-
-_defineProperty(SpeedMetrics, "AVG_METRIC", 1);
-
-_defineProperty(SpeedMetrics, "FRAME_TIMELINE_METRIC", 1 << 1);
