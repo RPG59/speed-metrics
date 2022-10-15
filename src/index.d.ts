@@ -3,6 +3,11 @@ type RefreshConfigType = {
   frameTimeline: boolean;
 };
 
+type FpsData = {
+  avg: number;
+  lov1: number;
+};
+
 export class SpeedMetrics {
   canvas: HTMLCanvasElement;
 
@@ -10,4 +15,5 @@ export class SpeedMetrics {
 
   update(): void;
   refresh(config: RefreshConfigType): void;
+  getData(): FpsData;
 }

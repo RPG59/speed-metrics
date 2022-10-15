@@ -182,4 +182,11 @@ export class SpeedMetrics {
       this.frameTimeBuffer.clean();
     }
   }
+
+  getData() {
+    return {
+      avg: this.avgFps,
+      lov1: this.#get1Low(),
+    };
+  }
 }

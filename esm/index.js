@@ -135,6 +135,13 @@ export class SpeedMetrics {
     }
   }
 
+  getData() {
+    return {
+      avg: this.avgFps,
+      lov1: _classPrivateMethodGet(this, _get1Low, _get1Low2).call(this)
+    };
+  }
+
 }
 
 function _get1Low2() {

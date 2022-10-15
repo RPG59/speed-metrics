@@ -1,6 +1,6 @@
 {
   "name": "@rpg59/speed-metrics",
-  "version": "0.2.9",
+  "version": "0.2.11",
   "description": "",
   "main": "src/speed-metrics.js",
   "module": "esm/index.js",
